@@ -1,0 +1,101 @@
+%% MOHG / Infor HMS-inspired sample data model (illustrative, not production schema)
+%% Primary hospitality entities commonly sourced from HMS: property, guest, reservation, stay, folio
+erDiagram
+    PROPERTY ||--o{ BUILDING : contains
+    PROPERTY ||--o{ ROOM : inventories
+    BUILDING ||--o{ ROOM : houses
+    PROPERTY ||--o{ RATE_CODE : offers
+    PROPERTY ||--o{ MARKET_SEGMENT : classifies
+    GUEST ||--o{ RESERVATION : books
+    PROPERTY ||--o{ RESERVATION : hosts
+    RESERVATION ||--o{ RESERVATION_STAY_NIGHT : expands
+    ROOM ||--o{ RESERVATION_STAY_NIGHT : occupies
+    RATE_CODE ||--o{ RESERVATION_STAY_NIGHT : prices
+    MARKET_SEGMENT ||--o{ RESERVATION : segments
+    RESERVATION ||--o{ FOLIO : bills
+    FOLIO ||--o{ FOLIO_POSTING : posts
+    GUEST ||--o{ FOLIO : pays
+
+    PROPERTY {
+        string property_code PK
+        string property_name
+        string brand_code
+        string timezone
+        string currency_code
+    }
+
+    BUILDING {
+        string building_key PK
+        string property_code FK
+        string building_name
+        int floor_count
+    }
+
+    ROOM {
+        string room_key PK
+        string property_code FK
+        string building_key FK
+        string room_number
+        string room_type_code
+        boolean is_statistical
+    }
+
+    GUEST {
+        string guest_id PK
+        string first_name
+        string last_name
+        string email
+        string vip_code
+    }
+
+    RESERVATION {
+        string reservation_id PK
+        string property_code FK
+        string guest_id FK
+        string market_segment_code FK
+        date arrival_date
+        date departure_date
+        string status_code
+        string confirmation_number UK
+    }
+
+    RESERVATION_STAY_NIGHT {
+        string stay_night_id PK
+        string reservation_id FK
+        string room_key FK
+        string rate_code FK
+        date business_date
+        decimal room_revenue
+        decimal room_nights
+    }
+
+    RATE_CODE {
+        string rate_code PK
+        string property_code FK
+        string rate_name
+        string currency_code
+    }
+
+    MARKET_SEGMENT {
+        string market_segment_code PK
+        string property_code FK
+        string segment_name
+        string segment_group
+    }
+
+    FOLIO {
+        string folio_id PK
+        string reservation_id FK
+        string guest_id FK
+        string folio_type
+        string status_code
+    }
+
+    FOLIO_POSTING {
+        string posting_id PK
+        string folio_id FK
+        date business_date
+        string transaction_code
+        decimal amount
+        string currency_code
+    }

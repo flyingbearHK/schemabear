@@ -1,0 +1,30 @@
+{
+  "name": "er-diagram",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Small, efficient ER diagram studio built with Tauri + Rust",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "test:unit": "cargo test --manifest-path crates/er-core/Cargo.toml",
+    "test": "npm run test:unit",
+    "check": "npm run test:unit && cargo check --manifest-path src-tauri/Cargo.toml && npm run build",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build --target aarch64-apple-darwin"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true
+  }
+}

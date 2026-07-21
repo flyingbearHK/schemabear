@@ -1,0 +1,32 @@
+# Dependencies / build
+node_modules/
+dist/
+target/
+src-tauri/target/
+crates/*/target/
+
+# Logs / OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Tauri / packaging artifacts
+*.dmg
+*.app
+src-tauri/gen/
+
+# Coverage / temp
+coverage/
+tmp/
+.turbo/
+*.tsbuildinfo

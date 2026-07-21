@@ -1,0 +1,21 @@
+schema_version: 1
+profile: layered
+bootstrap:
+  - START_HERE.md
+  - memory/ACTIVE_CONTEXT.md
+  - tasks/todo.md
+topics:
+  - id: harness_bootstrap
+    status: active
+    keywords: [harness, agents, orchestrator, worker, subagent, memory]
+    canonical_source: AGENTS.md
+    documents: [memory/topics/harness_bootstrap.md]
+    watch_paths: [AGENTS.md, memory/, tasks/, .pi/]
+    last_verified: 2026-07-22
+  - id: er_diagram_product
+    status: active
+    keywords: [er, mermaid, dbml, tauri, hms, mohg, diagram]
+    canonical_source: README.md
+    documents: [memory/topics/er_diagram_product.md]
+    watch_paths: [crates/er-core/, src/, src-tauri/, fixtures/]
+    last_verified: 2026-07-22

@@ -1,0 +1,18 @@
+[package]
+name = "er-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Entity-relationship diagram model, Mermaid/DBML interchange, and layout"
+repository = "https://github.com/example/er-diagram"
+readme = "README.md"
+keywords = ["er-diagram", "mermaid", "dbml", "data-model"]
+categories = ["parser-implementations", "visualization"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[dev-dependencies]
+pretty_assertions = "1"

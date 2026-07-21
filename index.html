@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ER Diagram</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+  <body>
+    <div id="app">
+      <header class="toolbar">
+        <div class="brand">
+          <span class="logo" aria-hidden="true">◇</span>
+          <div>
+            <strong>ER Diagram</strong>
+            <div class="muted" id="diagram-name">Untitled</div>
+          </div>
+        </div>
+
+        <div class="toolbar-group">
+          <button type="button" id="btn-sample" title="Load MOHG HMS sample">Sample</button>
+          <button type="button" id="btn-import-file" title="Import .mmd / .dbml / .dbml.txt">Import…</button>
+          <button type="button" id="btn-apply-code" class="primary" title="Parse code panel into diagram">Apply Code</button>
+          <button type="button" id="btn-layout" title="Auto-layout entities">Layout</button>
+          <button type="button" id="btn-validate" title="Validate model">Validate</button>
+        </div>
+
+        <div class="toolbar-group">
+          <label class="select-label">
+            Export
+            <select id="export-format" aria-label="Export format">
+              <option value="dbml">DBML (dbdiagram.io)</option>
+              <option value="mermaid">Mermaid</option>
+              <option value="json">JSON</option>
+            </select>
+          </label>
+          <button type="button" id="btn-export" title="Download export">Export</button>
+          <button type="button" id="btn-copy" title="Copy export to clipboard">Copy</button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <aside class="sidebar" aria-label="Entities">
+          <div class="panel-header">
+            <h2>Entities</h2>
+            <span class="badge" id="entity-count">0</span>
+          </div>
+          <ul id="entity-list"></ul>
+          <div class="panel-footer muted" id="status-line">Ready</div>
+        </aside>
+
+        <main class="canvas-wrap" aria-label="Diagram canvas">
+          <div id="canvas-viewport">
+            <svg id="diagram-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="canvas-help muted">
+            Drag cards to move · Scroll to pan · ⌥/Ctrl+scroll to zoom · Click entity to select
+          </div>
+        </main>
+
+        <aside class="code-panel" aria-label="Code editor">
+          <div class="panel-header">
+            <h2>Code</h2>
+            <select id="code-format" aria-label="Code format">
+              <option value="mermaid">Mermaid</option>
+              <option value="dbml">DBML</option>
+            </select>
+          </div>
+          <textarea
+            id="code-editor"
+            spellcheck="false"
+            placeholder="Paste Mermaid erDiagram or DBML here, then Apply Code"
+          ></textarea>
+          <div class="panel-footer">
+            <span class="muted" id="code-hint">AI-friendly: paste Mermaid ER code</span>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <input id="file-input" type="file" accept=".mmd,.mermaid,.md,.dbml,.txt,.json" hidden />
+  </body>
+</html>
