@@ -1,7 +1,7 @@
 {
   "name": "schemabear",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "SchemaBear — small, efficient ER diagram studio by flyingbear",
   "author": "flyingbear",
   "type": "module",
@@ -19,7 +19,10 @@
     "test": "npm run test:unit",
     "check": "npm run test:unit && cargo check --manifest-path src-tauri/Cargo.toml && npm run build",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build --target aarch64-apple-darwin"
+    "tauri:build": "tauri build",
+    "tauri:build:mac": "tauri build --target aarch64-apple-darwin",
+    "tauri:build:win": "tauri build --target x86_64-pc-windows-msvc",
+    "tauri:build:win-arm": "tauri build --target aarch64-pc-windows-msvc"
   },
   "dependencies": {
     "@tauri-apps/api": "^2"

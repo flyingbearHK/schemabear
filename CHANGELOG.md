@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.1.5] — 2026-07-22
+
+### Added
+
+- Windows packaging targets (NSIS installer + MSI)
+- `docs/BUILD_WINDOWS.md` — full Windows build guide
+- CI builds for Windows x64 and macOS arm64 with downloadable artifacts
+- npm scripts: `tauri:build:mac`, `tauri:build:win`, `tauri:build:win-arm`
+
 ## [0.1.4] — 2026-07-22
 
 ### Changed

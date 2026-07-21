@@ -1,6 +1,6 @@
 # SchemaBear
 
-Small Tauri + Rust ER studio for macOS Apple Silicon by **flyingbear**.  
+Small Tauri + Rust ER studio for **macOS + Windows** by **flyingbear**.  
 Mermaid in, DBML out, pure `er-core`.
 
 ## Stack
@@ -17,7 +17,9 @@ npm install
 npm run tauri dev
 make check
 cargo test --manifest-path crates/er-core/Cargo.toml
-npm run tauri:build
+npm run tauri:build:mac   # macOS arm64
+npm run tauri:build:win   # Windows x64 (on Windows / CI)
+# Windows guide: docs/BUILD_WINDOWS.md
 ```
 
 ## Architecture

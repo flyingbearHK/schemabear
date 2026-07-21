@@ -23,7 +23,10 @@ dev:
 	npm run tauri dev
 
 app:
-	npm run tauri:build
+	npm run tauri:build:mac
+
+app-win:
+	npm run tauri:build:win
 
 clean:
 	rm -rf dist node_modules target src-tauri/target crates/er-core/target
