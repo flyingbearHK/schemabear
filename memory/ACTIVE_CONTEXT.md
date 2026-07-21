@@ -7,11 +7,12 @@ Source of truth: `README.md`, `crates/er-core`, `src-tauri`
 
 ## Resume
 
-- Product is **ER Diagram**: Tauri 2 + Rust on macOS arm64.
+- Product is **ER Diagram**: Tauri 2 + Rust on macOS arm64 (v0.1.1).
 - Interchange: **Mermaid erDiagram** (AI-friendly in) and **DBML** (dbdiagram.io out).
-- Core library `er-core` is pure Rust and covered by unit + fixture tests.
-- UI is vanilla TS/SVG (no heavy frontend framework) for small bundle size.
-- Quality gate: `make check` (er-core tests, tauri check, frontend build, cargo build).
+- **Visual editor** + code path: Edit tab for entities/attrs/rels; Code tab for Mermaid/DBML.
+- Zoom: on-canvas controls, scroll-zoom, keyboard `+`/`-`/`0`.
+- Layout: relationship-aware layered placement in `er-core`.
+- Quality gate: `make check`.
 
 ## Open Questions
 

@@ -20,8 +20,8 @@
 
         <div class="toolbar-group">
           <button type="button" id="btn-sample" title="Load MOHG HMS sample">Sample</button>
-          <button type="button" id="btn-import-file" title="Import .mmd / .dbml / .dbml.txt">Import…</button>
-          <button type="button" id="btn-apply-code" class="primary" title="Parse code panel into diagram">Apply Code</button>
+          <button type="button" id="btn-import-file" title="Import .mmd / .dbml / .json">Import…</button>
+          <button type="button" id="btn-add-entity" class="primary" title="Add entity">+ Entity</button>
           <button type="button" id="btn-layout" title="Auto-layout entities">Layout</button>
           <button type="button" id="btn-validate" title="Validate model">Validate</button>
         </div>
@@ -54,27 +54,110 @@
           <div id="canvas-viewport">
             <svg id="diagram-svg" xmlns="http://www.w3.org/2000/svg"></svg>
           </div>
+
+          <div class="zoom-controls" role="toolbar" aria-label="Zoom">
+            <button type="button" id="btn-zoom-out" title="Zoom out (−)">−</button>
+            <button type="button" id="btn-zoom-label" title="Reset zoom to 100%" class="zoom-label">100%</button>
+            <button type="button" id="btn-zoom-in" title="Zoom in (+)">+</button>
+            <button type="button" id="btn-zoom-fit" title="Fit diagram (0)">Fit</button>
+          </div>
+
           <div class="canvas-help muted">
-            Drag cards to move · Scroll to pan · ⌥/Ctrl+scroll to zoom · Click entity to select
+            Scroll = zoom · Drag background / Space+drag = pan · Drag cards to move · Click to edit
           </div>
         </main>
 
-        <aside class="code-panel" aria-label="Code editor">
-          <div class="panel-header">
-            <h2>Code</h2>
-            <select id="code-format" aria-label="Code format">
-              <option value="mermaid">Mermaid</option>
-              <option value="dbml">DBML</option>
-            </select>
+        <aside class="right-panel" aria-label="Inspector and code">
+          <div class="tab-bar" role="tablist">
+            <button type="button" class="tab active" data-tab="edit" role="tab" aria-selected="true">Edit</button>
+            <button type="button" class="tab" data-tab="code" role="tab" aria-selected="false">Code</button>
           </div>
-          <textarea
-            id="code-editor"
-            spellcheck="false"
-            placeholder="Paste Mermaid erDiagram or DBML here, then Apply Code"
-          ></textarea>
-          <div class="panel-footer">
-            <span class="muted" id="code-hint">AI-friendly: paste Mermaid ER code</span>
-          </div>
+
+          <section id="tab-edit" class="tab-panel active" role="tabpanel">
+            <div id="edit-empty" class="edit-empty muted">
+              <p>Select an entity on the canvas, or click <strong>+ Entity</strong>.</p>
+              <p>You can also paste Mermaid/DBML under the <strong>Code</strong> tab.</p>
+            </div>
+
+            <div id="edit-entity" class="edit-form hidden">
+              <div class="form-row">
+                <label for="field-entity-name">Entity name</label>
+                <input id="field-entity-name" type="text" autocomplete="off" spellcheck="false" />
+              </div>
+
+              <div class="section-head">
+                <h3>Attributes</h3>
+                <button type="button" id="btn-add-attr" class="tiny">+ Attr</button>
+              </div>
+              <div id="attr-list" class="attr-list"></div>
+
+              <div class="form-actions">
+                <button type="button" id="btn-delete-entity" class="danger">Delete entity</button>
+              </div>
+
+              <div class="section-head">
+                <h3>Relationships</h3>
+              </div>
+              <div id="rel-list" class="rel-list"></div>
+
+              <div class="add-rel">
+                <div class="section-head"><h3>Add relationship</h3></div>
+                <div class="form-row two">
+                  <label>
+                    From
+                    <select id="rel-from"></select>
+                  </label>
+                  <label>
+                    To
+                    <select id="rel-to"></select>
+                  </label>
+                </div>
+                <div class="form-row two">
+                  <label>
+                    From card.
+                    <select id="rel-from-card">
+                      <option value="one">1</option>
+                      <option value="zero_or_one">0..1</option>
+                      <option value="zero_or_many" selected>0..*</option>
+                      <option value="one_or_many">1..*</option>
+                    </select>
+                  </label>
+                  <label>
+                    To card.
+                    <select id="rel-to-card">
+                      <option value="one" selected>1</option>
+                      <option value="zero_or_one">0..1</option>
+                      <option value="zero_or_many">0..*</option>
+                      <option value="one_or_many">1..*</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="form-row">
+                  <label for="rel-label">Label</label>
+                  <input id="rel-label" type="text" placeholder="optional" spellcheck="false" />
+                </div>
+                <button type="button" id="btn-add-rel" class="primary wide">Add relationship</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="tab-code" class="tab-panel" role="tabpanel" hidden>
+            <div class="panel-header code-header">
+              <select id="code-format" aria-label="Code format">
+                <option value="mermaid">Mermaid</option>
+                <option value="dbml">DBML</option>
+              </select>
+              <button type="button" id="btn-apply-code" class="primary" title="Parse code into diagram">Apply Code</button>
+            </div>
+            <textarea
+              id="code-editor"
+              spellcheck="false"
+              placeholder="Paste Mermaid erDiagram or DBML here, then Apply Code"
+            ></textarea>
+            <div class="panel-footer">
+              <span class="muted" id="code-hint">Code stays in sync after visual edits</span>
+            </div>
+          </section>
         </aside>
       </div>
     </div>

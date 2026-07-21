@@ -10,11 +10,13 @@ Designed for data-model work (including hospitality / HMS-style models) where AI
 
 ## Features
 
-- **Visual ER canvas** — entity cards, crow’s-foot relationships, pan/zoom, drag-to-reposition
+- **Visual ER canvas** — entity cards, rounded orthogonal links, crow’s-foot cardinality, drag-to-reposition
+- **Zoom that stays usable** — on-canvas +/−/Fit controls, scroll-wheel zoom, `+`/`-`/`0` shortcuts
+- **Visual editing** — add/rename/delete entities, edit attributes (PK/FK/UK/null), add/delete relationships (Code tab still available for AI paste)
 - **Mermaid import** — paste `erDiagram` code from AI / mermaid.live and apply
 - **DBML export/import** — [dbdiagram.io](https://dbdiagram.io) compatible interchange (primary export target)
 - **JSON export** — full internal model for tooling / round-trips
-- **Auto-layout + validation**
+- **Relationship-aware auto-layout + validation**
 - **Built-in MOHG / Infor HMS inspired sample** (illustrative, not a production schema)
 - **Expandable core** — pure Rust crate (`er-core`) reusable by CLI/WASM later
 
@@ -51,10 +53,13 @@ Artifacts land under `src-tauri/target/aarch64-apple-darwin/release/bundle/`.
 ## Usage
 
 1. Launch the app (loads the HMS sample by default).
-2. Paste Mermaid into the **Code** panel (or Import a `.mmd` / `.dbml` file).
-3. Click **Apply Code** (`⌘/Ctrl+Enter`).
-4. Drag entities, **Layout** if needed, **Validate**.
-5. **Export** as **DBML** (dbdiagram.io), Mermaid, or JSON.
+2. **Zoom** with the top-right controls, mouse wheel, or `+` / `-` / `0` (fit).
+3. **Edit visually**: select an entity → **Edit** tab (attributes, relationships), or **+ Entity**.
+4. Or paste Mermaid/DBML under **Code** → **Apply Code** (`⌘/Ctrl+Enter`).
+5. Drag cards to rearrange; **Layout** for automatic placement; **Validate**.
+6. **Export** as **DBML** (dbdiagram.io), Mermaid, or JSON.
+
+Pan: drag empty canvas, middle-mouse, or hold **Space** while dragging. Shift+scroll pans.
 
 ### Mermaid example
 
