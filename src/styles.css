@@ -314,6 +314,14 @@ input[type="text"] {
   cursor: grab;
 }
 
+#diagram-svg.dragging {
+  cursor: grabbing;
+}
+
+#diagram-svg.dragging .entity-card {
+  will-change: transform;
+}
+
 .canvas-controls {
   position: absolute;
   top: 12px;

@@ -54,15 +54,18 @@ const renderer = new DiagramRenderer(els.svg, {
   onSelectEntity: (name) => {
     selectedEntity = name;
     renderEntityList();
+    // setSelection is already applied inside the renderer for pointer paths;
+    // keep in sync for sidebar-driven selection.
     renderer.setSelection(name);
     renderEditor();
   },
   onMoveEntity: (name, x, y) => {
+    // Model-only update. The renderer already moved the card + edges on the
+    // fast path — do NOT call renderer.render() here (that was the lag source).
     if (!diagram) return;
     const entity = diagram.entities.find((e) => e.name === name);
     if (!entity) return;
     entity.position = { x, y };
-    renderer.render(diagram);
   },
   onZoomChange: (k) => updateZoomLabel(k),
 });
