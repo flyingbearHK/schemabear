@@ -1,7 +1,7 @@
 {
   "name": "er-diagram",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Small, efficient ER diagram studio built with Tauri + Rust",
   "type": "module",
   "license": "MIT",

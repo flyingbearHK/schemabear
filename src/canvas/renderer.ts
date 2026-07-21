@@ -618,6 +618,16 @@ export class DiagramRenderer {
     return g;
   }
 
+  private clearBrowserSelection() {
+    const sel = window.getSelection?.();
+    if (sel && sel.rangeCount > 0) sel.removeAllRanges();
+  }
+
+  private setInteracting(on: boolean) {
+    document.body.classList.toggle("is-canvas-interacting", on);
+    if (on) this.clearBrowserSelection();
+  }
+
   private onNodePointerDown = (ev: PointerEvent) => {
     if (ev.button !== 0 || this.spaceDown) return;
     const target = ev.target as Element | null;
@@ -629,6 +639,7 @@ export class DiagramRenderer {
 
     ev.stopPropagation();
     ev.preventDefault();
+    this.clearBrowserSelection();
 
     const entity = this.diagram.entities.find((e) => e.name === name);
     if (!entity) return;
@@ -646,6 +657,7 @@ export class DiagramRenderer {
     };
     g.style.cursor = "grabbing";
     this.svg.classList.add("dragging");
+    this.setInteracting(true);
     try {
       this.svg.setPointerCapture(ev.pointerId);
     } catch {
@@ -685,6 +697,8 @@ export class DiagramRenderer {
 
   private onPointerDown = (ev: PointerEvent) => {
     if (ev.button === 1 || (ev.button === 0 && (this.spaceDown || ev.altKey))) {
+      ev.preventDefault();
+      this.clearBrowserSelection();
       this.panning = {
         x: ev.clientX,
         y: ev.clientY,
@@ -692,11 +706,18 @@ export class DiagramRenderer {
         ty: this.transform.y,
       };
       this.svg.classList.add("panning");
-      ev.preventDefault();
+      this.setInteracting(true);
+      try {
+        this.svg.setPointerCapture(ev.pointerId);
+      } catch {
+        /* ignore */
+      }
       return;
     }
     if (ev.button !== 0) return;
-    // Background click — deselect without full rebuild.
+    // Background drag = pan. Stop the browser from selecting SVG text.
+    ev.preventDefault();
+    this.clearBrowserSelection();
     this.setSelection(null);
     this.handlers.onSelectEntity(null);
     this.panning = {
@@ -705,9 +726,20 @@ export class DiagramRenderer {
       tx: this.transform.x,
       ty: this.transform.y,
     };
+    this.svg.classList.add("panning");
+    this.setInteracting(true);
+    try {
+      this.svg.setPointerCapture(ev.pointerId);
+    } catch {
+      /* ignore */
+    }
   };
 
   private onPointerMove = (ev: PointerEvent) => {
+    if (this.dragging || this.panning) {
+      // Keep selection cleared if the OS tries to extend it mid-gesture.
+      this.clearBrowserSelection();
+    }
     if (this.dragging) {
       const dx = (ev.clientX - this.dragging.startX) / this.transform.k;
       const dy = (ev.clientY - this.dragging.startY) / this.transform.k;
@@ -758,10 +790,13 @@ export class DiagramRenderer {
     this.panning = null;
     this.svg.classList.remove("dragging");
     if (!this.spaceDown) this.svg.classList.remove("panning");
+    this.setInteracting(false);
+    this.clearBrowserSelection();
   };
 
   private onWheel = (ev: WheelEvent) => {
     ev.preventDefault();
+    this.clearBrowserSelection();
     if (ev.shiftKey) {
       this.transform.x -= ev.deltaY;
       this.transform.y -= ev.deltaX;

@@ -294,6 +294,10 @@ input[type="text"] {
     )
     0 0 / 22px 22px,
     var(--bg);
+  /* Prevent blue text/node selection flash while panning or dragging */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #canvas-viewport {
@@ -308,10 +312,18 @@ input[type="text"] {
   display: block;
   touch-action: none;
   cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#diagram-svg text,
+#diagram-svg tspan {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #diagram-svg.panning {
-  cursor: grab;
+  cursor: grabbing;
 }
 
 #diagram-svg.dragging {
@@ -320,6 +332,14 @@ input[type="text"] {
 
 #diagram-svg.dragging .entity-card {
   will-change: transform;
+}
+
+/* Global suppress while interacting with the canvas */
+body.is-canvas-interacting,
+body.is-canvas-interacting * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  cursor: grabbing;
 }
 
 .canvas-controls {
