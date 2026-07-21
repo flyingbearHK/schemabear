@@ -1,6 +1,6 @@
 [package]
 name = "er-diagram"
-version = "0.1.1"
+version = "0.1.2"
 description = "Small, efficient ER diagram studio for macOS (Apple Silicon)"
 authors = ["843-Pi Contributors"]
 edition = "2021"

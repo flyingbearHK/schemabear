@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.1.2] — 2026-07-22
+
+### Added
+
+- Prominent **Auto Arrange** / canvas **Arrange** buttons for one-click layout
+- Theme switcher: **System**, **Day** (light), **Dark** (persisted)
+
+### Improved
+
+- Auto-layout barycenter ordering to reduce relationship crossings and align chains
+
 ## [0.1.1] — 2026-07-22
 
 ### Added

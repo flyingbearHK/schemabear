@@ -22,7 +22,7 @@
           <button type="button" id="btn-sample" title="Load MOHG HMS sample">Sample</button>
           <button type="button" id="btn-import-file" title="Import .mmd / .dbml / .json">Import…</button>
           <button type="button" id="btn-add-entity" class="primary" title="Add entity">+ Entity</button>
-          <button type="button" id="btn-layout" title="Auto-layout entities">Layout</button>
+          <button type="button" id="btn-layout" class="accent" title="Auto-arrange entities and relationships">Auto Arrange</button>
           <button type="button" id="btn-validate" title="Validate model">Validate</button>
         </div>
 
@@ -37,6 +37,14 @@
           </label>
           <button type="button" id="btn-export" title="Download export">Export</button>
           <button type="button" id="btn-copy" title="Copy export to clipboard">Copy</button>
+          <label class="select-label" title="Appearance">
+            Theme
+            <select id="theme-select" aria-label="Theme">
+              <option value="system">System</option>
+              <option value="light">Day</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
         </div>
       </header>
 
@@ -55,7 +63,9 @@
             <svg id="diagram-svg" xmlns="http://www.w3.org/2000/svg"></svg>
           </div>
 
-          <div class="zoom-controls" role="toolbar" aria-label="Zoom">
+          <div class="canvas-controls" role="toolbar" aria-label="Canvas controls">
+            <button type="button" id="btn-arrange-canvas" class="accent" title="Auto-arrange entities and relationships">Arrange</button>
+            <span class="ctrl-sep" aria-hidden="true"></span>
             <button type="button" id="btn-zoom-out" title="Zoom out (−)">−</button>
             <button type="button" id="btn-zoom-label" title="Reset zoom to 100%" class="zoom-label">100%</button>
             <button type="button" id="btn-zoom-in" title="Zoom in (+)">+</button>
@@ -63,7 +73,7 @@
           </div>
 
           <div class="canvas-help muted">
-            Scroll = zoom · Drag background / Space+drag = pan · Drag cards to move · Click to edit
+            Arrange = auto layout · Scroll = zoom · Space+drag = pan · Drag cards · Click to edit
           </div>
         </main>
 

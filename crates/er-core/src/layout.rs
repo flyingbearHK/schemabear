@@ -1,8 +1,8 @@
 //! Deterministic auto-layout for entity cards.
 //!
-//! Uses a simple relationship-aware layered layout (left → right) so
-//! parent/lookup tables sit upstream of dependent facts. Falls back to a
-//! height-aware grid when the graph is empty or disconnected.
+//! Uses a relationship-aware layered layout (left → right) so parent/lookup
+//! tables sit upstream of dependent facts, with a barycenter pass to keep
+//! connected entities aligned and reduce crossed relationship lines.
 
 use crate::model::{Diagram, Position};
 use std::collections::{HashMap, VecDeque};
@@ -10,8 +10,8 @@ use std::collections::{HashMap, VecDeque};
 const CARD_WIDTH: f64 = 240.0;
 const CARD_BASE_HEIGHT: f64 = 44.0;
 const ATTR_HEIGHT: f64 = 22.0;
-const GAP_X: f64 = 100.0;
-const GAP_Y: f64 = 48.0;
+const GAP_X: f64 = 120.0;
+const GAP_Y: f64 = 56.0;
 const ORIGIN_X: f64 = 48.0;
 const ORIGIN_Y: f64 = 48.0;
 
@@ -39,43 +39,40 @@ pub fn auto_layout(diagram: &mut Diagram, force: bool) {
 }
 
 fn grid_layout(diagram: &mut Diagram, force: bool) {
-    let n = diagram.entities.len().max(1);
+    let pending: Vec<usize> = diagram
+        .entities
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| force || e.position.is_none())
+        .map(|(i, _)| i)
+        .collect();
+
+    if pending.is_empty() {
+        return;
+    }
+
+    let n = pending.len().max(1);
     let cols = ((n as f64).sqrt().ceil() as usize).clamp(2, 4);
 
-    // First pass: heights per row slot.
-    let mut heights: Vec<f64> = Vec::new();
-    let mut idx = 0usize;
-    for entity in &diagram.entities {
-        if entity.position.is_some() && !force {
-            continue;
-        }
-        let row = idx / cols;
-        let h = card_height(entity.attributes.len());
-        if heights.len() <= row {
-            heights.resize(row + 1, 0.0);
-        }
-        heights[row] = heights[row].max(h);
-        idx += 1;
+    let mut row_heights = vec![0.0f64; (n + cols - 1) / cols];
+    for (slot, &idx) in pending.iter().enumerate() {
+        let row = slot / cols;
+        let h = card_height(diagram.entities[idx].attributes.len());
+        row_heights[row] = row_heights[row].max(h);
     }
 
-    let mut row_y = vec![ORIGIN_Y];
-    for h in &heights {
-        let prev = *row_y.last().unwrap_or(&ORIGIN_Y);
-        row_y.push(prev + h + GAP_Y);
+    let mut row_y = vec![ORIGIN_Y; row_heights.len()];
+    for r in 1..row_heights.len() {
+        row_y[r] = row_y[r - 1] + row_heights[r - 1] + GAP_Y;
     }
 
-    idx = 0;
-    for entity in &mut diagram.entities {
-        if entity.position.is_some() && !force {
-            continue;
-        }
-        let col = idx % cols;
-        let row = idx / cols;
-        entity.position = Some(Position {
+    for (slot, &idx) in pending.iter().enumerate() {
+        let col = slot % cols;
+        let row = slot / cols;
+        diagram.entities[idx].position = Some(Position {
             x: ORIGIN_X + col as f64 * (CARD_WIDTH + GAP_X),
-            y: row_y.get(row).copied().unwrap_or(ORIGIN_Y),
+            y: row_y[row],
         });
-        idx += 1;
     }
 }
 
@@ -89,6 +86,7 @@ fn layered_layout(diagram: &mut Diagram, force: bool) {
 
     let n = names.len();
     let mut outgoing: Vec<Vec<usize>> = vec![Vec::new(); n];
+    let mut incoming: Vec<Vec<usize>> = vec![Vec::new(); n];
     let mut indegree = vec![0usize; n];
 
     for rel in &diagram.relationships {
@@ -101,22 +99,20 @@ fn layered_layout(diagram: &mut Diagram, force: bool) {
         if a == b {
             continue;
         }
-        // Orient edge from "one" side toward "many" side when possible so
-        // dimensions/lookups sit left of facts.
         let (src, dst) = prefer_one_to_many(a, b, rel.from_cardinality, rel.to_cardinality);
         if !outgoing[src].contains(&dst) {
             outgoing[src].push(dst);
+            incoming[dst].push(src);
             indegree[dst] += 1;
         }
     }
 
-    // Kahn-style layering; cycles get appended at the end.
+    // Kahn-style longest-path layering.
     let mut layer = vec![0usize; n];
     let mut q: VecDeque<usize> = VecDeque::new();
     for (i, &deg) in indegree.iter().enumerate() {
         if deg == 0 {
             q.push_back(i);
-            layer[i] = 0;
         }
     }
 
@@ -134,7 +130,6 @@ fn layered_layout(diagram: &mut Diagram, force: bool) {
     }
 
     if seen < n {
-        // Break cycles: place remaining nodes after max known layer.
         let base = layer.iter().copied().max().unwrap_or(0) + 1;
         let mut extra = 0usize;
         for i in 0..n {
@@ -145,33 +140,81 @@ fn layered_layout(diagram: &mut Diagram, force: bool) {
         }
     }
 
-    // Group by layer.
     let max_layer = layer.iter().copied().max().unwrap_or(0);
     let mut buckets: Vec<Vec<usize>> = vec![Vec::new(); max_layer + 1];
     for (i, &l) in layer.iter().enumerate() {
         buckets[l].push(i);
     }
 
-    // Light ordering: entities with more attrs lower in the column.
+    // Initial stable order.
     for bucket in &mut buckets {
         bucket.sort_by(|&a, &b| {
-            let ha = diagram.entities[a].attributes.len();
-            let hb = diagram.entities[b].attributes.len();
-            ha.cmp(&hb).then_with(|| {
-                diagram.entities[a]
-                    .name
-                    .cmp(&diagram.entities[b].name)
-            })
+            diagram.entities[a]
+                .name
+                .cmp(&diagram.entities[b].name)
+                .then_with(|| {
+                    diagram.entities[a]
+                        .attributes
+                        .len()
+                        .cmp(&diagram.entities[b].attributes.len())
+                })
         });
     }
 
-    // Place columns left→right; stack vertically with real heights.
+    // Barycenter sweeps to align connected entities and cut crossings.
+    for _ in 0..4 {
+        // Left → right using predecessors.
+        for l in 1..=max_layer {
+            let prev_pos: HashMap<usize, f64> = buckets[l - 1]
+                .iter()
+                .enumerate()
+                .map(|(rank, &id)| (id, rank as f64))
+                .collect();
+            buckets[l].sort_by(|&a, &b| {
+                barycenter(&incoming[a], &prev_pos)
+                    .partial_cmp(&barycenter(&incoming[b], &prev_pos))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| diagram.entities[a].name.cmp(&diagram.entities[b].name))
+            });
+        }
+        // Right → left using successors.
+        if max_layer == 0 {
+            break;
+        }
+        for l in (0..max_layer).rev() {
+            let next_pos: HashMap<usize, f64> = buckets[l + 1]
+                .iter()
+                .enumerate()
+                .map(|(rank, &id)| (id, rank as f64))
+                .collect();
+            buckets[l].sort_by(|&a, &b| {
+                barycenter(&outgoing[a], &next_pos)
+                    .partial_cmp(&barycenter(&outgoing[b], &next_pos))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| diagram.entities[a].name.cmp(&diagram.entities[b].name))
+            });
+        }
+    }
+
+    // Place columns left→right; center shorter columns vertically against the tallest.
+    let mut col_heights = vec![0.0f64; buckets.len()];
     for (l, bucket) in buckets.iter().enumerate() {
-        let mut y = ORIGIN_Y;
+        let mut h = 0.0;
+        for (i, &idx) in bucket.iter().enumerate() {
+            h += card_height(diagram.entities[idx].attributes.len());
+            if i + 1 < bucket.len() {
+                h += GAP_Y;
+            }
+        }
+        col_heights[l] = h;
+    }
+    let max_h = col_heights.iter().copied().fold(0.0, f64::max);
+
+    for (l, bucket) in buckets.iter().enumerate() {
+        let mut y = ORIGIN_Y + ((max_h - col_heights[l]) / 2.0).max(0.0);
         for &idx in bucket {
             let entity = &mut diagram.entities[idx];
             if entity.position.is_some() && !force {
-                // Still advance y using existing box so neighbors don't pile on.
                 if let Some(pos) = entity.position {
                     y = y.max(pos.y + card_height(entity.attributes.len()) + GAP_Y);
                 }
@@ -185,10 +228,24 @@ fn layered_layout(diagram: &mut Diagram, force: bool) {
         }
     }
 
-    // Any entity still missing a position (shouldn't happen) → grid tail.
-    let missing = diagram.entities.iter().any(|e| e.position.is_none());
-    if missing {
+    if diagram.entities.iter().any(|e| e.position.is_none()) {
         grid_layout(diagram, force);
+    }
+}
+
+fn barycenter(neighbors: &[usize], rank_of: &HashMap<usize, f64>) -> f64 {
+    let mut sum = 0.0;
+    let mut count = 0.0;
+    for &n in neighbors {
+        if let Some(&r) = rank_of.get(&n) {
+            sum += r;
+            count += 1.0;
+        }
+    }
+    if count == 0.0 {
+        f64::MAX / 4.0
+    } else {
+        sum / count
     }
 }
 
@@ -272,5 +329,31 @@ mod tests {
         let p = d.entity_by_name("PARENT").unwrap().position.unwrap();
         let c = d.entity_by_name("CHILD").unwrap().position.unwrap();
         assert!(p.x < c.x, "parent should be left of child: {p:?} vs {c:?}");
+    }
+
+    #[test]
+    fn barycenter_keeps_chain_aligned() {
+        let mut d = Diagram::new("t");
+        for name in ["A", "B", "C", "D"] {
+            d.entities.push(Entity::new(name));
+        }
+        d.relationships.push(Relationship::new(
+            "A",
+            "B",
+            Cardinality::One,
+            Cardinality::ZeroOrMany,
+        ));
+        d.relationships.push(Relationship::new(
+            "B",
+            "C",
+            Cardinality::One,
+            Cardinality::ZeroOrMany,
+        ));
+        // Noise entity with no edges should not sit between the chain on x.
+        auto_layout(&mut d, true);
+        let ax = d.entity_by_name("A").unwrap().position.unwrap().x;
+        let bx = d.entity_by_name("B").unwrap().position.unwrap().x;
+        let cx = d.entity_by_name("C").unwrap().position.unwrap().x;
+        assert!(ax < bx && bx < cx);
     }
 }

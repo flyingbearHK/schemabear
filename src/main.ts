@@ -378,12 +378,48 @@ async function onSample() {
 async function onLayout() {
   if (!diagram) return;
   try {
+    setStatus("Arranging…");
     const next = await layoutDiagram(diagram, true);
     await setDiagram(next, { syncCode: false, fit: true });
-    setStatus("Auto-layout applied");
+    setStatus("Auto-arranged entities and relationships");
   } catch (err) {
     setStatus(errorMessage(err), true);
   }
+}
+
+type ThemeMode = "system" | "light" | "dark";
+const THEME_KEY = "er-diagram.theme";
+
+function resolveTheme(mode: ThemeMode): "light" | "dark" {
+  if (mode === "light" || mode === "dark") return mode;
+  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
+function applyTheme(mode: ThemeMode) {
+  const root = document.documentElement;
+  root.dataset.theme = mode;
+  // Help native form controls / scrollbars pick the right scheme.
+  root.style.colorScheme = mode === "system" ? "light dark" : mode;
+  localStorage.setItem(THEME_KEY, mode);
+  const select = document.getElementById("theme-select") as HTMLSelectElement | null;
+  if (select) select.value = mode;
+  // Re-paint SVG so CSS variables on markers refresh if needed.
+  if (diagram) renderer.render(diagram);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY) as ThemeMode | null;
+  const mode: ThemeMode =
+    saved === "light" || saved === "dark" || saved === "system" ? saved : "system";
+  applyTheme(mode);
+
+  const mq = window.matchMedia("(prefers-color-scheme: light)");
+  const onOsChange = () => {
+    const current = (localStorage.getItem(THEME_KEY) as ThemeMode | null) ?? "system";
+    if (current === "system") applyTheme("system");
+  };
+  mq.addEventListener("change", onOsChange);
+  void resolveTheme; // keep helper for future status text if needed
 }
 
 async function onValidate() {
@@ -644,6 +680,7 @@ function bind() {
   $("btn-sample").addEventListener("click", () => void onSample());
   $("btn-apply-code").addEventListener("click", () => void applyCode());
   $("btn-layout").addEventListener("click", () => void onLayout());
+  $("btn-arrange-canvas").addEventListener("click", () => void onLayout());
   $("btn-validate").addEventListener("click", () => void onValidate());
   $("btn-export").addEventListener("click", () => void onExport());
   $("btn-copy").addEventListener("click", () => void onCopy());
@@ -652,6 +689,18 @@ function bind() {
   $("btn-add-attr").addEventListener("click", addAttribute);
   $("btn-delete-entity").addEventListener("click", deleteSelectedEntity);
   $("btn-add-rel").addEventListener("click", addRelationship);
+
+  $("theme-select").addEventListener("change", (ev) => {
+    const value = (ev.target as HTMLSelectElement).value as ThemeMode;
+    applyTheme(value);
+    setStatus(
+      value === "system"
+        ? "Theme: System"
+        : value === "light"
+          ? "Theme: Day"
+          : "Theme: Dark",
+    );
+  });
 
   $("btn-zoom-in").addEventListener("click", () => {
     renderer.zoomBy(1.15);
@@ -714,6 +763,7 @@ function bind() {
 }
 
 async function boot() {
+  initTheme();
   bind();
   updateZoomLabel();
   try {
