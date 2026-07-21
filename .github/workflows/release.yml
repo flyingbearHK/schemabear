@@ -1,0 +1,147 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.1.5). Leave empty to use package.json version."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  version:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.tag }}" ]; then
+            TAG="${{ inputs.tag }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            VER=$(node -p "require('./package.json').version")
+            TAG="v${VER}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Releasing ${TAG}"
+
+  build-macos:
+    needs: version
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run tauri:build:mac
+      - name: Stage macOS assets
+        shell: bash
+        run: |
+          mkdir -p dist-release
+          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg dist-release/ || true
+          (
+            cd src-tauri/target/aarch64-apple-darwin/release/bundle/macos
+            ditto -c -k --sequesterRsrc --keepParent SchemaBear.app \
+              "${GITHUB_WORKSPACE}/dist-release/SchemaBear_${{ needs.version.outputs.version }}_aarch64.app.zip"
+          )
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: dist-release/*
+
+  build-windows:
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run tauri:build:win
+      - name: Stage Windows assets
+        shell: bash
+        run: |
+          mkdir -p dist-release
+          cp src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe dist-release/ 2>/dev/null || true
+          cp src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi dist-release/ 2>/dev/null || true
+          cp src-tauri/target/release/bundle/nsis/*.exe dist-release/ 2>/dev/null || true
+          cp src-tauri/target/release/bundle/msi/*.msi dist-release/ 2>/dev/null || true
+          ls -la dist-release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist-release/*
+
+  publish:
+    needs: [version, build-macos, build-windows]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Collect assets
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          find artifacts -type f \( -name '*.dmg' -o -name '*.zip' -o -name '*.exe' -o -name '*.msi' \) \
+            -exec cp {} release-assets/ \;
+          ls -lah release-assets
+          test "$(find release-assets -type f | wc -l)" -ge 1
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: SchemaBear ${{ needs.version.outputs.tag }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: release-assets/*
+          body: |
+            ## SchemaBear ${{ needs.version.outputs.tag }}
+
+            Small, fast ER diagram studio by **flyingbear**.
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | macOS Apple Silicon | `SchemaBear_*_aarch64.dmg` or `.app.zip` |
+            | Windows x64 | `SchemaBear_*_x64-setup.exe` (NSIS) or `.msi` |
+
+            ### Notes
+            - Windows builds may show SmartScreen until code-signed.
+            - macOS unsigned local/CI builds: right-click → Open, or remove quarantine.
+            - Full changelog: see [CHANGELOG.md](https://github.com/flyingbearHK/schemabear/blob/main/CHANGELOG.md)
+
+            ### Verify
+            ```bash
+            shasum -a 256 SchemaBear_*
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
