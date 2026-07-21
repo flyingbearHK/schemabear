@@ -141,13 +141,21 @@ UI (TS/SVG) ──invoke──▶ Tauri commands ──▶ er-core
 
 `er-core` has **no UI dependencies** — ready for a future CLI or WASM build.
 
-## CI / downloads
+## Releases / downloads
 
-On every push to `main`, GitHub Actions:
+**Latest release:** https://github.com/flyingbearHK/schemabear/releases/latest
+
+| Platform | Package |
+|----------|---------|
+| macOS Apple Silicon | `.dmg` or `.app.zip` |
+| Windows x64 | NSIS `.exe` setup (recommended) or `.msi` |
+
+On every push to `main`, GitHub Actions also:
 
 1. Runs tests on macOS, Windows, and Linux  
-2. Builds **macOS arm64** and **Windows x64** bundles  
-3. Uploads artifacts you can download from the Actions run page
+2. Builds **macOS arm64** and **Windows x64** bundles as CI artifacts  
+3. On tag `v*` (or manual **release** workflow), publishes a GitHub Release with installers  
+
 
 ## License
 
