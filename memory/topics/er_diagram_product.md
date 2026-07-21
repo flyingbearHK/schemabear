@@ -1,4 +1,4 @@
-# Topic: ER Diagram Product
+# Topic: SchemaBear Product
 
 Lifecycle: active  
 Confidence: confirmed  
@@ -7,13 +7,16 @@ Source of truth: `README.md`, `crates/er-core`
 
 ## Facts
 
-- App identifier: `com.erdiagram.app`
-- Primary platforms target: macOS Apple Silicon (`aarch64-apple-darwin`)
+- Product name: **SchemaBear**
+- Author: flyingbear (`flyingbearHK`)
+- App identifier: `hk.flyingbear.schemabear`
+- Bundle: `SchemaBear.app`
+- Repo: `https://github.com/flyingbearHK/schemabear`
 - Import: Mermaid `erDiagram`, DBML, JSON
-- Export: DBML (primary mainstream), Mermaid, JSON
-- Sample: `fixtures/mohg_hms_sample.mmd` — PROPERTY, GUEST, RESERVATION, stay night, folio path
+- Export: DBML (primary), Mermaid, JSON
+- Sample: `fixtures/infor_hms_sample.mmd` — Infor HMS inspired
 
 ## Decisions
 
-- DBML chosen over SQL/PlantUML as first export because of dbdiagram.io popularity and simple text ergonomics.
-- Pure `er-core` crate keeps future CLI/WASM expansion cheap.
+- Name SchemaBear pairs flyingbear identity with schema/ER purpose.
+- DBML chosen as first mainstream export (dbdiagram.io).

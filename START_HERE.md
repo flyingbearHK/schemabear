@@ -1,4 +1,4 @@
-# START_HERE — ER Diagram
+# START_HERE — SchemaBear
 
 1. `AGENTS.md` — commands and boundaries  
 2. `memory/ACTIVE_CONTEXT.md` — resume point  
@@ -13,5 +13,5 @@
 | Run app | `npm run tauri dev` |
 | Quality gate | `make check` |
 | Mermaid/DBML logic | `crates/er-core/src/` |
-| HMS sample | `fixtures/mohg_hms_sample.mmd` |
+| HMS sample | `fixtures/infor_hms_sample.mmd` |
 | UI canvas | `src/canvas/renderer.ts` |

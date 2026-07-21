@@ -17,5 +17,5 @@ pub fn run() {
             validate_diagram,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running ER Diagram");
+        .expect("error while running SchemaBear");
 }

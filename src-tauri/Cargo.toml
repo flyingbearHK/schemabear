@@ -1,14 +1,15 @@
 [package]
-name = "er-diagram"
+name = "schemabear"
 version = "0.1.4"
-description = "Small, efficient ER diagram studio for macOS (Apple Silicon)"
-authors = ["843-Pi Contributors"]
+description = "SchemaBear — small, efficient ER diagram studio by flyingbear"
+authors = ["flyingbear <https://github.com/flyingbearHK>"]
 edition = "2021"
 license = "MIT"
-default-run = "er-diagram"
+default-run = "schemabear"
+repository = "https://github.com/flyingbearHK/schemabear"
 
 [lib]
-name = "er_diagram_lib"
+name = "schemabear_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

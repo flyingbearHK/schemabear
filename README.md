@@ -1,24 +1,30 @@
-# ER Diagram
+# SchemaBear
 
-Small, efficient **entity-relationship diagram** studio for **macOS Apple Silicon**, built with [Tauri](https://tauri.app) + Rust.
+<small>by [flyingbear](https://github.com/flyingbearHK)</small>
 
-Designed for data-model work (including hospitality / HMS-style models) where AI can generate Mermaid ER code and humans need a fast visual tool plus export into mainstream ER tooling.
+**SchemaBear** is a small, fast entity-relationship diagram studio for **macOS Apple Silicon**.  
+Built with [Tauri](https://tauri.app) + Rust. Mermaid in, DBML out, visual editing in between.
 
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![platform](https://img.shields.io/badge/platform-macOS%20arm64-black)
 ![stack](https://img.shields.io/badge/stack-Tauri%202%20%2B%20Rust-orange)
 
+## Why SchemaBear?
+
+- **AI-friendly** — paste Mermaid `erDiagram` code and apply
+- **Tooling-friendly** — export **DBML** for [dbdiagram.io](https://dbdiagram.io)
+- **Human-friendly** — drag cards, edit attributes, auto-arrange, zoom
+- **Lightweight** — vanilla TypeScript UI + pure Rust core (`er-core`)
+
 ## Features
 
-- **Visual ER canvas** — entity cards, rounded orthogonal links, crow’s-foot cardinality, drag-to-reposition
-- **Zoom that stays usable** — on-canvas +/−/Fit controls, scroll-wheel zoom, `+`/`-`/`0` shortcuts
-- **Visual editing** — add/rename/delete entities, edit attributes (PK/FK/UK/null), add/delete relationships (Code tab still available for AI paste)
-- **Mermaid import** — paste `erDiagram` code from AI / mermaid.live and apply
-- **DBML export/import** — [dbdiagram.io](https://dbdiagram.io) compatible interchange (primary export target)
-- **JSON export** — full internal model for tooling / round-trips
-- **Relationship-aware auto-layout + validation**
-- **Built-in MOHG / Infor HMS inspired sample** (illustrative, not a production schema)
-- **Expandable core** — pure Rust crate (`er-core`) reusable by CLI/WASM later
+- Visual ER canvas with rounded orthogonal links and crow’s-foot cardinality
+- Zoom controls, scroll-zoom, pan without selection glitches
+- Visual editor: entities, attributes (PK/FK/UK), relationships
+- Mermaid + DBML import/export, JSON round-trip
+- Relationship-aware **Auto Arrange**
+- Theme: System / Day / Dark
+- Built-in **Infor HMS** hospitality sample (illustrative)
 
 ## Quick start
 
@@ -48,18 +54,23 @@ make check
 npm run tauri:build
 ```
 
-Artifacts land under `src-tauri/target/aarch64-apple-darwin/release/bundle/`.
+Artifacts:
+
+```text
+src-tauri/target/aarch64-apple-darwin/release/bundle/macos/SchemaBear.app
+src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/
+```
 
 ## Usage
 
-1. Launch the app (loads the HMS sample by default).
+1. Launch SchemaBear (loads the Infor HMS sample by default).
 2. **Zoom** with the top-right controls, mouse wheel, or `+` / `-` / `0` (fit).
-3. **Edit visually**: select an entity → **Edit** tab (attributes, relationships), or **+ Entity**.
+3. **Edit visually**: select an entity → **Edit** tab, or **+ Entity**.
 4. Or paste Mermaid/DBML under **Code** → **Apply Code** (`⌘/Ctrl+Enter`).
-5. Drag cards to rearrange; **Layout** for automatic placement; **Validate**.
-6. **Export** as **DBML** (dbdiagram.io), Mermaid, or JSON.
+5. **Auto Arrange** / **Arrange** to reflow; **Validate** to check the model.
+6. **Export** as DBML, Mermaid, or JSON.
 
-Pan: drag empty canvas, middle-mouse, or hold **Space** while dragging. Shift+scroll pans.
+Pan: drag empty canvas, middle-mouse, or hold **Space** while dragging.
 
 ### Mermaid example
 
@@ -76,48 +87,36 @@ erDiagram
     }
 ```
 
-### Why DBML for export?
-
-DBML is the native language of **dbdiagram.io** and is widely used as a lightweight ER interchange format. Mermaid remains first-class for AI generation and docs.
-
 ## Project layout
 
 ```text
-├── crates/er-core/          # Pure Rust model + Mermaid/DBML + layout/validate
-├── src/                     # Vite + TypeScript UI
-├── src-tauri/               # Tauri shell + IPC commands
-├── fixtures/                # Sample diagrams
-├── AGENTS.md                # Agent/harness instructions
-├── Makefile                 # check / test / build
-└── LICENSE                  # MIT
+├── crates/er-core/     # Pure Rust model + Mermaid/DBML + layout/validate
+├── src/                # Vite + TypeScript UI
+├── src-tauri/          # Tauri shell (SchemaBear)
+├── fixtures/           # Sample diagrams
+├── examples/           # Exported DBML / Mermaid
+├── Makefile
+└── LICENSE             # MIT
 ```
-
-### Extension points
-
-| Layer | Add later without rewrite |
-|-------|---------------------------|
-| `er-core` | SQL DDL export, PlantUML, GraphQL SDL, physical/logical layers |
-| Tauri commands | File watcher, multi-diagram workspace, native dialogs |
-| UI | Undo stack, multi-select, theme packs, print/PDF |
-| Distribution | Homebrew cask, notarized DMG CI |
 
 ## Architecture
 
 ```text
 UI (TS/SVG) ──invoke──▶ Tauri commands ──▶ er-core
                               │
-                              ├─ import_mermaid / export_mermaid
-                              ├─ import_dbml / export_dbml
+                              ├─ Mermaid import/export
+                              ├─ DBML import/export
                               ├─ auto_layout / validate
                               └─ sample diagrams
 ```
 
-`er-core` has **no UI dependencies**. Future `er-cli` or WASM builds can depend on it directly.
+`er-core` has **no UI dependencies** — ready for a future CLI or WASM build.
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT © flyingbear — see [LICENSE](./LICENSE).
 
 ## Disclaimer
 
-The bundled MOHG/HMS sample is a **teaching fixture** for hospitality data modeling. It is not an official Infor or MOHG schema.
+The bundled Infor HMS sample is a **teaching fixture** for hospitality data modeling.  
+It is not an official Infor schema.

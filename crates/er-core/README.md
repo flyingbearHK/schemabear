@@ -1,6 +1,6 @@
 # er-core
 
-Pure Rust entity-relationship model and interchange library.
+Pure Rust entity-relationship model and interchange library used by **SchemaBear**.
 
 ## Capabilities
 
@@ -15,7 +15,7 @@ Pure Rust entity-relationship model and interchange library.
 ```rust
 use er_core::{import_mermaid, export_dbml, auto_layout, validate};
 
-let mut diagram = import_mermaid(include_str!("../../../fixtures/mohg_hms_sample.mmd"))?;
+let mut diagram = import_mermaid(include_str!("../../../fixtures/infor_hms_sample.mmd"))?;
 auto_layout(&mut diagram, true);
 assert!(validate(&diagram).ok);
 let dbml = export_dbml(&diagram);

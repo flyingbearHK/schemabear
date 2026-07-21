@@ -1,6 +1,6 @@
-# Contributing
+# Contributing to SchemaBear
 
-Thanks for helping improve ER Diagram.
+Thanks for helping improve SchemaBear.
 
 ## Development
 
@@ -20,7 +20,7 @@ make check
 - Keep `er-core` pure Rust (no Tauri/UI deps).
 - Prefer small, tested parsers over large dependency stacks.
 - Update fixtures when interchange formats change.
-- Keep `AGENTS.md` ≤ 70 lines; put deep docs in `README.md` / `memory/`.
+- Keep `AGENTS.md` ≤ 70 lines; put deep docs in `README.md`.
 
 ## Commit style
 
@@ -29,4 +29,5 @@ make check
 
 ## License
 
-By contributing, you agree your changes are licensed under the MIT License.
+By contributing, you agree your changes are licensed under the MIT License  
+(copyright flyingbear / flyingbearHK).

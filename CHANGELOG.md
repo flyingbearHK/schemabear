@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.1.4] — 2026-07-22
+
+### Changed
+
+- Product renamed to **SchemaBear** by flyingbear
+- Sample renamed to **Infor HMS Sample** (removed MOHG branding)
+- Bundle id `hk.flyingbear.schemabear`
+
+### Fixed
+
+- Canvas drag performance (incremental SVG updates)
+- Text-selection highlight while panning
+
 ## [0.1.2] — 2026-07-22
 
 ### Added
@@ -30,5 +43,5 @@ All notable changes to this project are documented in this file.
 - Pure `er-core` library: model, Mermaid ER import/export, DBML import/export, layout, validation
 - SVG canvas with pan/zoom, drag, crow’s-foot markers
 - Code panel for AI-friendly Mermaid/DBML editing
-- MOHG / Infor HMS inspired sample fixture
+- Infor HMS inspired sample fixture
 - MIT license, Makefile quality gate, OSS layout

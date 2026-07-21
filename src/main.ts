@@ -372,7 +372,7 @@ async function onSample() {
     const next = await loadSample();
     selectedEntity = null;
     await setDiagram(next);
-    setStatus("Loaded MOHG HMS sample");
+    setStatus("Loaded Infor HMS sample");
   } catch (err) {
     setStatus(errorMessage(err), true);
   }
@@ -391,7 +391,7 @@ async function onLayout() {
 }
 
 type ThemeMode = "system" | "light" | "dark";
-const THEME_KEY = "er-diagram.theme";
+const THEME_KEY = "schemabear.theme";
 
 function resolveTheme(mode: ThemeMode): "light" | "dark" {
   if (mode === "light" || mode === "dark") return mode;

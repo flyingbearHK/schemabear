@@ -18,7 +18,7 @@ pub use error::{Error, Result};
 pub use layout::auto_layout;
 pub use mermaid::{export_mermaid, import_mermaid};
 pub use model::*;
-pub use sample::{load_mohg_hms_sample, MOHG_HMS_SAMPLE_MERMAID};
+pub use sample::{load_infor_hms_sample, INFOR_HMS_SAMPLE_MERMAID};
 pub use validate::{validate, ValidationReport};
 
 /// Library version (mirrors crate version).

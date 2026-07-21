@@ -3,10 +3,11 @@ name = "er-core"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "Entity-relationship diagram model, Mermaid/DBML interchange, and layout"
-repository = "https://github.com/example/er-diagram"
+description = "Entity-relationship diagram model, Mermaid/DBML interchange, and layout for SchemaBear"
+authors = ["flyingbear <https://github.com/flyingbearHK>"]
+repository = "https://github.com/flyingbearHK/schemabear"
 readme = "README.md"
-keywords = ["er-diagram", "mermaid", "dbml", "data-model"]
+keywords = ["er-diagram", "mermaid", "dbml", "data-model", "schemabear"]
 categories = ["parser-implementations", "visualization"]
 
 [dependencies]

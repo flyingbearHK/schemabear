@@ -1,5 +1,5 @@
 use er_core::{
-    auto_layout, export_dbml, export_mermaid, import_dbml, import_mermaid, load_mohg_hms_sample,
+    auto_layout, export_dbml, export_mermaid, import_dbml, import_mermaid, load_infor_hms_sample,
     validate, Diagram, ValidationReport, VERSION,
 };
 use serde::Serialize;
@@ -31,7 +31,7 @@ pub fn get_version() -> String {
 
 #[tauri::command]
 pub fn load_sample() -> Result<Diagram, CommandError> {
-    Ok(load_mohg_hms_sample()?)
+    Ok(load_infor_hms_sample()?)
 }
 
 #[tauri::command]

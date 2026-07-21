@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ER Diagram",
+  "productName": "SchemaBear",
   "version": "0.1.4",
-  "identifier": "com.erdiagram.studio",
+  "identifier": "hk.flyingbear.schemabear",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "ER Diagram",
+        "title": "SchemaBear",
         "width": 1280,
         "height": 840,
         "minWidth": 900,
