@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.1.6] — 2026-07-22
+
+### Improved
+- ER auto-layout: Sugiyama crossing reduction with virtual nodes, adjacent transposition, and neighbor-median Y alignment
+- Edge routing: per-side port fan-out + corridor bend staggering for fewer stacked lines
+
 ## [0.1.5] — 2026-07-22
 
 ### Added

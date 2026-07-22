@@ -376,23 +376,98 @@ export class DiagramRenderer {
     if (!this.diagram) return;
 
     const byName = new Map(this.diagram.entities.map((e) => [e.name, e]));
+
+    // Precompute per-side attachment order so edges fan cleanly along card edges.
+    // Key: `${entityName}|${side}` → relationship ids sorted by other endpoint Y.
+    type SideKey = string;
+    const sideBuckets = new Map<SideKey, { relId: string; otherY: number }[]>();
+
+    const usable: { rel: Relationship; a: Entity; b: Entity; sides: { from: Side; to: Side } }[] =
+      [];
+
+    for (const rel of this.diagram.relationships) {
+      const a = byName.get(rel.fromEntity);
+      const b = byName.get(rel.toEntity);
+      if (!a || !b) continue;
+      const sides = pickSides(a, b);
+      usable.push({ rel, a, b, sides });
+
+      const ca = entityCenter(a);
+      const cb = entityCenter(b);
+      const fromKey = `${a.name}|${sides.from}`;
+      const toKey = `${b.name}|${sides.to}`;
+      if (!sideBuckets.has(fromKey)) sideBuckets.set(fromKey, []);
+      if (!sideBuckets.has(toKey)) sideBuckets.set(toKey, []);
+      sideBuckets.get(fromKey)!.push({ relId: rel.id, otherY: cb.y });
+      sideBuckets.get(toKey)!.push({ relId: rel.id, otherY: ca.y });
+    }
+
+    // `${relId}@@${entityName}|${side}` → slot 0..1 along that card edge
+    const sideSlot = new Map<string, number>();
+    for (const [sideKey, list] of sideBuckets) {
+      list.sort((p, q) => p.otherY - q.otherY || p.relId.localeCompare(q.relId));
+      const n = list.length;
+      list.forEach((item, i) => {
+        // Spread ports between 0.22 and 0.78 so markers don't sit on corners.
+        const slot = n === 1 ? 0.5 : 0.22 + (0.56 * i) / (n - 1);
+        sideSlot.set(`${item.relId}@@${sideKey}`, slot);
+      });
+    }
+
+    // Stagger mid-channel bends when many edges share a left→right corridor.
+    const corridor = new Map<string, Relationship[]>();
+    for (const { rel, a, b, sides } of usable) {
+      if (
+        (sides.from === "right" && sides.to === "left") ||
+        (sides.from === "left" && sides.to === "right")
+      ) {
+        // Bucket by approximate column gap using rounded x.
+        const lx = Math.round(Math.min(entityCenter(a).x, entityCenter(b).x) / 40) * 40;
+        const key = `h:${lx}`;
+        if (!corridor.has(key)) corridor.set(key, []);
+        corridor.get(key)!.push(rel);
+      }
+    }
+    const bendOf = new Map<string, number>();
+    for (const [, rels] of corridor) {
+      rels.sort((r1, r2) => {
+        const a1 = byName.get(r1.fromEntity)!;
+        const b1 = byName.get(r1.toEntity)!;
+        const a2 = byName.get(r2.fromEntity)!;
+        const b2 = byName.get(r2.toEntity)!;
+        const m1 = (entityCenter(a1).y + entityCenter(b1).y) / 2;
+        const m2 = (entityCenter(a2).y + entityCenter(b2).y) / 2;
+        return m1 - m2 || r1.id.localeCompare(r2.id);
+      });
+      const n = rels.length;
+      rels.forEach((rel, i) => {
+        // Small alternating channel offsets so parallel ortholines don't stack.
+        const bend = n <= 1 ? 0 : (i - (n - 1) / 2) * 14;
+        bendOf.set(rel.id, bend);
+      });
+    }
+
+    // Pair-level extra bend for multiple relationships between the same entities.
     const pairCount = new Map<string, number>();
     const pairIndex = new Map<string, number>();
-    for (const rel of this.diagram.relationships) {
+    for (const { rel } of usable) {
       const key = pairKey(rel.fromEntity, rel.toEntity);
       pairCount.set(key, (pairCount.get(key) ?? 0) + 1);
     }
 
     const keep = new Set<string>();
-    for (const rel of this.diagram.relationships) {
-      const a = byName.get(rel.fromEntity);
-      const b = byName.get(rel.toEntity);
-      if (!a || !b) continue;
+    for (const { rel, a, b, sides } of usable) {
       const key = pairKey(rel.fromEntity, rel.toEntity);
       const total = pairCount.get(key) ?? 1;
       const idx = pairIndex.get(key) ?? 0;
       pairIndex.set(key, idx + 1);
-      const bend = total === 1 ? 0 : (idx - (total - 1) / 2) * 24;
+      const pairBend = total === 1 ? 0 : (idx - (total - 1) / 2) * 22;
+      const bend = (bendOf.get(rel.id) ?? 0) + pairBend;
+
+      const fromSlot =
+        sideSlot.get(`${rel.id}@@${a.name}|${sides.from}`) ?? 0.5;
+      const toSlot =
+        sideSlot.get(`${rel.id}@@${b.name}|${sides.to}`) ?? 0.5;
       keep.add(rel.id);
 
       let g = this.edgeEls.get(rel.id);
@@ -401,7 +476,7 @@ export class DiagramRenderer {
         this.edges.appendChild(g);
         this.edgeEls.set(rel.id, g);
       }
-      this.applyRelationshipGeometry(g, rel, a, b, bend);
+      this.applyRelationshipGeometry(g, rel, a, b, bend, sides, fromSlot, toSlot);
     }
 
     for (const [id, el] of this.edgeEls) {
@@ -454,11 +529,13 @@ export class DiagramRenderer {
     a: Entity,
     b: Entity,
     bend: number,
+    sidesArg?: { from: Side; to: Side },
+    fromSlot = 0.5,
+    toSlot = 0.5,
   ) {
-    const sides = pickSides(a, b);
-    const slot = 0.5 + Math.max(-0.25, Math.min(0.25, bend / 120));
-    const start = anchorOnSide(a, sides.from, slot);
-    const end = anchorOnSide(b, sides.to, 1 - slot);
+    const sides = sidesArg ?? pickSides(a, b);
+    const start = anchorOnSide(a, sides.from, fromSlot);
+    const end = anchorOnSide(b, sides.to, toSlot);
     const path = orthoPath(start, end, bend);
 
     const kids = g.children;
