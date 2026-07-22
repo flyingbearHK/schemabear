@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.1.8] — 2026-07-22
+
+### Changed
+- Relationship lines use clean straight/cubic curves instead of wavy multi-bend orthogonal routes
+
 ## [0.1.7] — 2026-07-22
 
 ### Added

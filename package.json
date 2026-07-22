@@ -1,7 +1,7 @@
 {
   "name": "schemabear",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "SchemaBear — small, efficient ER diagram studio by flyingbear",
   "author": "flyingbear",
   "type": "module",

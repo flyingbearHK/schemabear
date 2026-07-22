@@ -1,6 +1,6 @@
 [package]
 name = "schemabear"
-version = "0.1.7"
+version = "0.1.8"
 description = "SchemaBear — small, efficient ER diagram studio by flyingbear"
 authors = ["flyingbear <https://github.com/flyingbearHK>"]
 edition = "2021"
