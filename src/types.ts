@@ -53,3 +53,17 @@ export interface ValidationReport {
 
 export type CodeFormat = "mermaid" | "dbml";
 export type ExportFormat = "mermaid" | "dbml" | "json";
+
+/** Matches er-core LayoutDirection (snake_case on the wire). */
+export type LayoutDirection = "left_right" | "top_bottom";
+
+/** Matches er-core LayoutDensity. */
+export type LayoutDensity = "compact" | "comfortable" | "wide";
+
+export interface LayoutOptions {
+  force?: boolean;
+  direction?: LayoutDirection;
+  density?: LayoutDensity;
+  /** Force-directed polish after layered placement (default true). */
+  polish?: boolean;
+}

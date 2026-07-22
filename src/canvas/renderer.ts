@@ -69,34 +69,91 @@ function pickSides(a: Entity, b: Entity): { from: Side; to: Side } {
   return dy >= 0 ? { from: "bottom", to: "top" } : { from: "top", to: "bottom" };
 }
 
-function orthoPath(
+interface Pt {
+  x: number;
+  y: number;
+}
+
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+function exitPoint(p: { x: number; y: number; side: Side }, pad = 18): Pt {
+  switch (p.side) {
+    case "left":
+      return { x: p.x - pad, y: p.y };
+    case "right":
+      return { x: p.x + pad, y: p.y };
+    case "top":
+      return { x: p.x, y: p.y - pad };
+    case "bottom":
+      return { x: p.x, y: p.y + pad };
+  }
+}
+
+function segmentHitsRect(a: Pt, b: Pt, r: Rect, margin = 4): boolean {
+  // Expand rect slightly so lines don't graze card borders.
+  const x0 = r.x - margin;
+  const y0 = r.y - margin;
+  const x1 = r.x + r.w + margin;
+  const y1 = r.y + r.h + margin;
+
+  // Liang–Barsky style rejection for axis-aligned segment vs AABB.
+  const minX = Math.min(a.x, b.x);
+  const maxX = Math.max(a.x, b.x);
+  const minY = Math.min(a.y, b.y);
+  const maxY = Math.max(a.y, b.y);
+  if (maxX < x0 || minX > x1 || maxY < y0 || minY > y1) return false;
+
+  // Pure horizontal / vertical (our routes are ortho).
+  if (Math.abs(a.y - b.y) < 0.5) {
+    const y = a.y;
+    return y > y0 && y < y1 && maxX > x0 && minX < x1;
+  }
+  if (Math.abs(a.x - b.x) < 0.5) {
+    const x = a.x;
+    return x > x0 && x < x1 && maxY > y0 && minY < y1;
+  }
+  // Fallback: sample midpoints
+  for (let t = 0.1; t <= 0.9; t += 0.2) {
+    const x = a.x + (b.x - a.x) * t;
+    const y = a.y + (b.y - a.y) * t;
+    if (x > x0 && x < x1 && y > y0 && y < y1) return true;
+  }
+  return false;
+}
+
+function polylineHitsObstacles(pts: Pt[], obstacles: Rect[], ignore?: Rect[]): boolean {
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    // Skip very short stubs near anchors
+    if (Math.hypot(a.x - b.x, a.y - b.y) < 2) continue;
+    for (const r of obstacles) {
+      if (ignore?.some((g) => g === r)) continue;
+      // Allow the first/last segment to touch near card edges (anchors).
+      const nearEnd = i === 0 || i === pts.length - 2;
+      if (nearEnd) continue;
+      if (segmentHitsRect(a, b, r, 2)) return true;
+    }
+  }
+  return false;
+}
+
+function classicOrthoPts(
   start: { x: number; y: number; side: Side },
   end: { x: number; y: number; side: Side },
   bend = 0,
-): string {
-  const pad = 18;
-  const exit = (p: { x: number; y: number; side: Side }) => {
-    switch (p.side) {
-      case "left":
-        return { x: p.x - pad, y: p.y };
-      case "right":
-        return { x: p.x + pad, y: p.y };
-      case "top":
-        return { x: p.x, y: p.y - pad };
-      case "bottom":
-        return { x: p.x, y: p.y + pad };
-    }
-  };
-  const s = exit(start);
-  const e = exit(end);
+): Pt[] {
+  const s = exitPoint(start);
+  const e = exitPoint(end);
   const midX = (s.x + e.x) / 2 + bend;
-  const r = 10;
   const horizStart = start.side === "left" || start.side === "right";
   const horizEnd = end.side === "left" || end.side === "right";
-  const pts: { x: number; y: number }[] = [
-    { x: start.x, y: start.y },
-    s,
-  ];
+  const pts: Pt[] = [{ x: start.x, y: start.y }, s];
 
   if (horizStart && horizEnd) {
     pts.push({ x: midX, y: s.y }, { x: midX, y: e.y });
@@ -109,7 +166,191 @@ function orthoPath(
     pts.push({ x: s.x, y: e.y });
   }
   pts.push(e, { x: end.x, y: end.y });
-  return roundedPolyline(pts, r);
+  return pts;
+}
+
+/** Orthogonal A* on a coarse grid that treats entity cards as blocked cells. */
+function astarOrtho(
+  start: Pt,
+  end: Pt,
+  obstacles: Rect[],
+  cell = 24,
+): Pt[] | null {
+  const pad = cell * 2;
+  const minX = Math.floor((Math.min(start.x, end.x) - pad) / cell) * cell;
+  const minY = Math.floor((Math.min(start.y, end.y) - pad) / cell) * cell;
+  const maxX = Math.ceil((Math.max(start.x, end.x) + pad) / cell) * cell;
+  const maxY = Math.ceil((Math.max(start.y, end.y) + pad) / cell) * cell;
+
+  // Expand bounds to include obstacles so we can route around them.
+  let bx0 = minX;
+  let by0 = minY;
+  let bx1 = maxX;
+  let by1 = maxY;
+  for (const r of obstacles) {
+    bx0 = Math.min(bx0, Math.floor((r.x - pad) / cell) * cell);
+    by0 = Math.min(by0, Math.floor((r.y - pad) / cell) * cell);
+    bx1 = Math.max(bx1, Math.ceil((r.x + r.w + pad) / cell) * cell);
+    by1 = Math.max(by1, Math.ceil((r.y + r.h + pad) / cell) * cell);
+  }
+
+  const cols = Math.max(2, Math.round((bx1 - bx0) / cell) + 1);
+  const rows = Math.max(2, Math.round((by1 - by0) / cell) + 1);
+  // Cap grid size for interactivity.
+  if (cols * rows > 12000) return null;
+
+  const blocked = new Uint8Array(cols * rows);
+  const idx = (c: number, r: number) => r * cols + c;
+  const inBounds = (c: number, r: number) => c >= 0 && r >= 0 && c < cols && r < rows;
+
+  for (const rect of obstacles) {
+    const c0 = Math.floor((rect.x - bx0) / cell);
+    const r0 = Math.floor((rect.y - by0) / cell);
+    const c1 = Math.ceil((rect.x + rect.w - bx0) / cell);
+    const r1 = Math.ceil((rect.y + rect.h - by0) / cell);
+    for (let r = r0; r <= r1; r++) {
+      for (let c = c0; c <= c1; c++) {
+        if (inBounds(c, r)) blocked[idx(c, r)] = 1;
+      }
+    }
+  }
+
+  const toCell = (p: Pt) => ({
+    c: Math.max(0, Math.min(cols - 1, Math.round((p.x - bx0) / cell))),
+    r: Math.max(0, Math.min(rows - 1, Math.round((p.y - by0) / cell))),
+  });
+  const toWorld = (c: number, r: number): Pt => ({
+    x: bx0 + c * cell,
+    y: by0 + r * cell,
+  });
+
+  const sc = toCell(start);
+  const ec = toCell(end);
+  // Ensure start/end walkable.
+  blocked[idx(sc.c, sc.r)] = 0;
+  blocked[idx(ec.c, ec.r)] = 0;
+
+  const open: { c: number; r: number; g: number; f: number }[] = [];
+  const came = new Int32Array(cols * rows).fill(-1);
+  const gScore = new Float64Array(cols * rows).fill(Infinity);
+  const startI = idx(sc.c, sc.r);
+  gScore[startI] = 0;
+  open.push({
+    c: sc.c,
+    r: sc.r,
+    g: 0,
+    f: Math.abs(ec.c - sc.c) + Math.abs(ec.r - sc.r),
+  });
+
+  const dirs = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+  let found = -1;
+  const endI = idx(ec.c, ec.r);
+  let steps = 0;
+  const stepLimit = cols * rows * 4;
+
+  while (open.length && steps++ < stepLimit) {
+    // Linear pop-min — grid is small enough.
+    let bi = 0;
+    for (let i = 1; i < open.length; i++) {
+      if (open[i].f < open[bi].f) bi = i;
+    }
+    const cur = open[bi];
+    open[bi] = open[open.length - 1];
+    open.pop();
+    const ci = idx(cur.c, cur.r);
+    if (ci === endI) {
+      found = ci;
+      break;
+    }
+    if (cur.g > gScore[ci] + 1e-6) continue;
+
+    for (const [dc, dr] of dirs) {
+      const nc = cur.c + dc;
+      const nr = cur.r + dr;
+      if (!inBounds(nc, nr)) continue;
+      const ni = idx(nc, nr);
+      if (blocked[ni]) continue;
+      // Prefer straight runs slightly (turn penalty via parent direction).
+      const ng = cur.g + 1;
+      if (ng + 1e-9 < gScore[ni]) {
+        came[ni] = ci;
+        gScore[ni] = ng;
+        const h = Math.abs(ec.c - nc) + Math.abs(ec.r - nr);
+        open.push({ c: nc, r: nr, g: ng, f: ng + h });
+      }
+    }
+  }
+
+  if (found < 0) return null;
+
+  // Reconstruct grid path
+  const cells: { c: number; r: number }[] = [];
+  let cur = found;
+  while (cur >= 0) {
+    cells.push({ c: cur % cols, r: Math.floor(cur / cols) });
+    cur = came[cur];
+  }
+  cells.reverse();
+
+  // Convert to world points, keep corners only.
+  const raw: Pt[] = cells.map(({ c, r }) => toWorld(c, r));
+  // Snap first/last toward true start/end
+  raw[0] = start;
+  raw[raw.length - 1] = end;
+
+  const simplified: Pt[] = [raw[0]];
+  for (let i = 1; i < raw.length - 1; i++) {
+    const prev = simplified[simplified.length - 1];
+    const curr = raw[i];
+    const next = raw[i + 1];
+    const dir1x = Math.sign(curr.x - prev.x);
+    const dir1y = Math.sign(curr.y - prev.y);
+    const dir2x = Math.sign(next.x - curr.x);
+    const dir2y = Math.sign(next.y - curr.y);
+    if (dir1x !== dir2x || dir1y !== dir2y) {
+      simplified.push(curr);
+    }
+  }
+  simplified.push(raw[raw.length - 1]);
+  return simplified;
+}
+
+function orthoPath(
+  start: { x: number; y: number; side: Side },
+  end: { x: number; y: number; side: Side },
+  bend = 0,
+  obstacles: Rect[] = [],
+): string {
+  const r = 10;
+  const s = exitPoint(start);
+  const e = exitPoint(end);
+
+  // Fast path candidates: classic ortho with several corridor offsets.
+  const bends = [bend, bend + 36, bend - 36, bend + 72, bend - 72, 0];
+  let best: Pt[] | null = null;
+  for (const b of bends) {
+    const pts = classicOrthoPts(start, end, b);
+    if (!polylineHitsObstacles(pts, obstacles)) {
+      best = pts;
+      break;
+    }
+    if (!best) best = pts;
+  }
+
+  // If still colliding, try A* around cards.
+  if (best && polylineHitsObstacles(best, obstacles) && obstacles.length) {
+    const routed = astarOrtho(s, e, obstacles, 20);
+    if (routed && routed.length >= 2) {
+      best = [{ x: start.x, y: start.y }, ...routed, { x: end.x, y: end.y }];
+    }
+  }
+
+  return roundedPolyline(best ?? classicOrthoPts(start, end, bend), r);
 }
 
 function roundedPolyline(pts: { x: number; y: number }[], radius: number): string {
@@ -376,6 +617,10 @@ export class DiagramRenderer {
     if (!this.diagram) return;
 
     const byName = new Map(this.diagram.entities.map((e) => [e.name, e]));
+    const obstacles: Rect[] = this.diagram.entities.map((e) => {
+      const p = e.position ?? { x: 0, y: 0 };
+      return { x: p.x, y: p.y, w: CARD_W, h: cardHeight(e) };
+    });
 
     // Precompute per-side attachment order so edges fan cleanly along card edges.
     // Key: `${entityName}|${side}` → relationship ids sorted by other endpoint Y.
@@ -476,7 +721,17 @@ export class DiagramRenderer {
         this.edges.appendChild(g);
         this.edgeEls.set(rel.id, g);
       }
-      this.applyRelationshipGeometry(g, rel, a, b, bend, sides, fromSlot, toSlot);
+      this.applyRelationshipGeometry(
+        g,
+        rel,
+        a,
+        b,
+        bend,
+        sides,
+        fromSlot,
+        toSlot,
+        obstacles,
+      );
     }
 
     for (const [id, el] of this.edgeEls) {
@@ -532,11 +787,22 @@ export class DiagramRenderer {
     sidesArg?: { from: Side; to: Side },
     fromSlot = 0.5,
     toSlot = 0.5,
+    obstacles: Rect[] = [],
   ) {
     const sides = sidesArg ?? pickSides(a, b);
     const start = anchorOnSide(a, sides.from, fromSlot);
     const end = anchorOnSide(b, sides.to, toSlot);
-    const path = orthoPath(start, end, bend);
+    // Exclude endpoint cards so routes can leave/enter cleanly.
+    const aPos = a.position ?? { x: 0, y: 0 };
+    const bPos = b.position ?? { x: 0, y: 0 };
+    const filtered = obstacles.filter((r) => {
+      const isA =
+        Math.abs(r.x - aPos.x) < 1 && Math.abs(r.y - aPos.y) < 1 && Math.abs(r.w - CARD_W) < 1;
+      const isB =
+        Math.abs(r.x - bPos.x) < 1 && Math.abs(r.y - bPos.y) < 1 && Math.abs(r.w - CARD_W) < 1;
+      return !isA && !isB;
+    });
+    const path = orthoPath(start, end, bend, filtered);
 
     const kids = g.children;
     // hit, line, m1, m2, bg, text

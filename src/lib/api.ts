@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Diagram, ValidationReport } from "../types";
+import type { Diagram, LayoutOptions, ValidationReport } from "../types";
 
 export async function getVersion(): Promise<string> {
   return invoke<string>("get_version");
@@ -25,8 +25,16 @@ export async function toDbml(diagram: Diagram): Promise<string> {
   return invoke<string>("to_dbml", { diagram });
 }
 
-export async function layoutDiagram(diagram: Diagram, force = true): Promise<Diagram> {
-  return invoke<Diagram>("layout_diagram", { diagram, force });
+export async function layoutDiagram(
+  diagram: Diagram,
+  force = true,
+  options: LayoutOptions = {},
+): Promise<Diagram> {
+  return invoke<Diagram>("layout_diagram", {
+    diagram,
+    force,
+    options: { force, polish: true, direction: "left_right", density: "comfortable", ...options },
+  });
 }
 
 export async function validateDiagram(diagram: Diagram): Promise<ValidationReport> {

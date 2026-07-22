@@ -1,6 +1,6 @@
 use er_core::{
-    auto_layout, export_dbml, export_mermaid, import_dbml, import_mermaid, load_infor_hms_sample,
-    validate, Diagram, ValidationReport, VERSION,
+    auto_layout, auto_layout_with, export_dbml, export_mermaid, import_dbml, import_mermaid,
+    load_infor_hms_sample, validate, Diagram, LayoutOptions, ValidationReport, VERSION,
 };
 use serde::Serialize;
 
@@ -59,8 +59,14 @@ pub fn to_dbml(diagram: Diagram) -> Result<String, CommandError> {
 }
 
 #[tauri::command]
-pub fn layout_diagram(mut diagram: Diagram, force: bool) -> Result<Diagram, CommandError> {
-    auto_layout(&mut diagram, force);
+pub fn layout_diagram(
+    mut diagram: Diagram,
+    force: bool,
+    options: Option<LayoutOptions>,
+) -> Result<Diagram, CommandError> {
+    let mut opts = options.unwrap_or_default();
+    opts.force = force;
+    auto_layout_with(&mut diagram, opts);
     Ok(diagram)
 }
 

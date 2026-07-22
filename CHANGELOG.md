@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.1.7] — 2026-07-22
+
+### Added
+- Layout **direction**: Left→Right and Top→Bottom
+- Layout **density**: Compact / Comfortable / Wide
+- Optional **force-directed polish** after layered arrange
+- Obstacle-aware orthogonal edge routing (corridor try + A*)
+
+### Improved
+- Auto Arrange accepts full layout options from the toolbar
+
 ## [0.1.6] — 2026-07-22
 
 ### Improved

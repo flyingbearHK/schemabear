@@ -378,13 +378,56 @@ async function onSample() {
   }
 }
 
+type LayoutDirectionPref = "left_right" | "top_bottom";
+type LayoutDensityPref = "compact" | "comfortable" | "wide";
+const LAYOUT_DIR_KEY = "schemabear.layout.direction";
+const LAYOUT_DEN_KEY = "schemabear.layout.density";
+const LAYOUT_POLISH_KEY = "schemabear.layout.polish";
+
+function readLayoutPrefs() {
+  const direction = (localStorage.getItem(LAYOUT_DIR_KEY) as LayoutDirectionPref | null) ?? "left_right";
+  const density = (localStorage.getItem(LAYOUT_DEN_KEY) as LayoutDensityPref | null) ?? "comfortable";
+  const polishRaw = localStorage.getItem(LAYOUT_POLISH_KEY);
+  const polish = polishRaw === null ? true : polishRaw === "1" || polishRaw === "true";
+  return {
+    direction: direction === "top_bottom" ? "top_bottom" as const : "left_right" as const,
+    density:
+      density === "compact" || density === "wide" ? density : ("comfortable" as const),
+    polish,
+  };
+}
+
+function syncLayoutControls() {
+  const prefs = readLayoutPrefs();
+  const dir = document.getElementById("layout-direction") as HTMLSelectElement | null;
+  const den = document.getElementById("layout-density") as HTMLSelectElement | null;
+  const pol = document.getElementById("layout-polish") as HTMLInputElement | null;
+  if (dir) dir.value = prefs.direction;
+  if (den) den.value = prefs.density;
+  if (pol) pol.checked = prefs.polish;
+}
+
+function persistLayoutControls() {
+  const dir = document.getElementById("layout-direction") as HTMLSelectElement | null;
+  const den = document.getElementById("layout-density") as HTMLSelectElement | null;
+  const pol = document.getElementById("layout-polish") as HTMLInputElement | null;
+  if (dir) localStorage.setItem(LAYOUT_DIR_KEY, dir.value);
+  if (den) localStorage.setItem(LAYOUT_DEN_KEY, den.value);
+  if (pol) localStorage.setItem(LAYOUT_POLISH_KEY, pol.checked ? "1" : "0");
+}
+
 async function onLayout() {
   if (!diagram) return;
   try {
+    persistLayoutControls();
+    const prefs = readLayoutPrefs();
     setStatus("Arranging…");
-    const next = await layoutDiagram(diagram, true);
+    const next = await layoutDiagram(diagram, true, prefs);
     await setDiagram(next, { syncCode: false, fit: true });
-    setStatus("Auto-arranged entities and relationships");
+    const flow = prefs.direction === "top_bottom" ? "top→bottom" : "left→right";
+    setStatus(
+      `Arranged (${flow}, ${prefs.density}${prefs.polish ? ", polished" : ""})`,
+    );
   } catch (err) {
     setStatus(errorMessage(err), true);
   }
@@ -684,6 +727,16 @@ function bind() {
   $("btn-apply-code").addEventListener("click", () => void applyCode());
   $("btn-layout").addEventListener("click", () => void onLayout());
   $("btn-arrange-canvas").addEventListener("click", () => void onLayout());
+  syncLayoutControls();
+  $("layout-direction").addEventListener("change", () => {
+    persistLayoutControls();
+  });
+  $("layout-density").addEventListener("change", () => {
+    persistLayoutControls();
+  });
+  $("layout-polish").addEventListener("change", () => {
+    persistLayoutControls();
+  });
   $("btn-validate").addEventListener("click", () => void onValidate());
   $("btn-export").addEventListener("click", () => void onExport());
   $("btn-copy").addEventListener("click", () => void onCopy());

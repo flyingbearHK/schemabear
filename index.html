@@ -23,6 +23,25 @@
           <button type="button" id="btn-import-file" title="Import .mmd / .dbml / .json">Import…</button>
           <button type="button" id="btn-add-entity" class="primary" title="Add entity">+ Entity</button>
           <button type="button" id="btn-layout" class="accent" title="Auto-arrange entities and relationships">Auto Arrange</button>
+          <label class="select-label" title="Layout direction">
+            Flow
+            <select id="layout-direction" aria-label="Layout direction">
+              <option value="left_right">Left → Right</option>
+              <option value="top_bottom">Top → Bottom</option>
+            </select>
+          </label>
+          <label class="select-label" title="Spacing between cards">
+            Density
+            <select id="layout-density" aria-label="Layout density">
+              <option value="compact">Compact</option>
+              <option value="comfortable" selected>Comfortable</option>
+              <option value="wide">Wide</option>
+            </select>
+          </label>
+          <label class="check-label" title="Force-directed polish after layered arrange">
+            <input type="checkbox" id="layout-polish" checked />
+            Polish
+          </label>
           <button type="button" id="btn-validate" title="Validate model">Validate</button>
         </div>
 
@@ -73,7 +92,7 @@
           </div>
 
           <div class="canvas-help muted">
-            Arrange = auto layout · Scroll = zoom · Space+drag = pan · Drag cards · Click to edit
+            Arrange · Flow/Density/Polish in toolbar · Scroll = zoom · Space+drag = pan · Drag cards
           </div>
         </main>
 

@@ -15,7 +15,7 @@ pub mod validate;
 
 pub use dbml::{export_dbml, import_dbml};
 pub use error::{Error, Result};
-pub use layout::auto_layout;
+pub use layout::{auto_layout, auto_layout_with, LayoutDensity, LayoutDirection, LayoutOptions};
 pub use mermaid::{export_mermaid, import_mermaid};
 pub use model::*;
 pub use sample::{load_infor_hms_sample, INFOR_HMS_SAMPLE_MERMAID};

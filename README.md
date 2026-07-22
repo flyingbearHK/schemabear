@@ -22,7 +22,8 @@ Built with [Tauri](https://tauri.app) + Rust. Mermaid in, DBML out, visual editi
 - Zoom controls, scroll-zoom, pan without selection glitches
 - Visual editor: entities, attributes (PK/FK/UK), relationships
 - Mermaid + DBML import/export, JSON round-trip
-- Relationship-aware **Auto Arrange**
+- Relationship-aware **Auto Arrange** (L→R / T→B, density, force polish)
+- Obstacle-aware relationship routing on the canvas
 - Theme: System / Day / Dark
 - Built-in **Infor HMS** hospitality sample (illustrative)
 - Desktop packages: macOS `.app`/`.dmg`, Windows NSIS `.exe` / `.msi`
